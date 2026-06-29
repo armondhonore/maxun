@@ -2,14 +2,14 @@
 
 **Live:** [https://relaxed-weasel-maxun.cloud.nexlayer.ai](https://relaxed-weasel-maxun.cloud.nexlayer.ai)  
 
-**Runtime:**  · **Port:** auto-detected · **Deploy branch:** develop
+**Runtime:**  · **Port:** auto-detected · **Deploy branch:** nexlayer
 
 ---
 
 ## How this deployment works
 
 **maxun** is deployed on [Nexlayer](https://nexlayer.ai) — a container-native
-platform where every push to `develop` triggers a fully automated build-and-deploy
+platform where every push to `nexlayer` triggers a fully automated build-and-deploy
 pipeline with no infrastructure management required:
 
 1. **AI analysis** — the Nexlayer agent reads your repo, understands your runtime,
@@ -38,45 +38,70 @@ The agent generates this; you can edit it freely.
 application:
   name: maxun
   pods:
+  # Frontend (Vite dev server) — built from source via the root Dockerfile so the
+  # patched vite.config.js (host=true, allowedHosts=true) is baked in. Serves UI.
   - name: app
-    image: mirror.gcr.io/maxun/maxun:latest
+    image: mirror.gcr.io/getmaxun/maxun-frontend:latest
     path: /
+    servicePorts:
+    - 5173
+    vars:
+      NODE_ENV: "production"
+      VITE_PUBLIC_URL: "<% URL %>"
+      PUBLIC_URL: "<% URL %>"
+      VITE_BACKEND_URL: "<% URL %>/api"
+      BACKEND_URL: "<% URL %>/api"
+  # Backend API (prebuilt) — needs postgres + redis. Minio (file export) is
+  # omitted; it requires a `server /data` command the schema can't express and
+  # is not needed for the frontend UI to serve.
+  - name: backend
+    image: mirror.gcr.io/getmaxun/maxun-backend:latest
+    path: /api
     servicePorts:
     - 8080
     vars:
-      POSTGRES_HOST: postgres.pod
-      POSTGRES_PORT: "5432"
-      POSTGRES_DB: maxun
-      POSTGRES_USER: maxun
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
-      REDIS_HOST: redis.pod
+      NODE_ENV: "production"
+      BACKEND_PORT: "8080"
+      BACKEND_URL: "<% URL %>/api"
+      PUBLIC_URL: "<% URL %>"
+      VITE_BACKEND_URL: "<% URL %>/api"
+      VITE_PUBLIC_URL: "<% URL %>"
+      JWT_SECRET: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+      ENCRYPTION_KEY: "f4d5e6a7b8c9d0e1f23456789abcdef01234567890abcdef123456789abcdef0"
+      SESSION_SECRET: "maxun_session_secret_value"
+      DB_NAME: "maxun"
+      DB_USER: "maxun"
+      DB_PASSWORD: "maxunpgpass"
+      DB_HOST: "maxun-postgres.pod"
+      DB_PORT: "5432"
+      REDIS_HOST: "maxun-redis.pod"
       REDIS_PORT: "6379"
-      JWT_SECRET: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-      ENCRYPTION_KEY: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
-    volumes:
-    - name: maxun-data
-      mountPath: /app/uploads
-      size: 5Gi
-  - name: postgres
-    image: mirror.gcr.io/library/postgres:16-alpine
+      MINIO_ENDPOINT: "maxun-minio.pod"
+      MINIO_PORT: "9000"
+      MINIO_CONSOLE_PORT: "9001"
+      MINIO_ACCESS_KEY: "minio_access_key"
+      MINIO_SECRET_KEY: "minio_secret_key"
+      CI: "true"
+      CONTAINER: "true"
+      PLAYWRIGHT_BROWSERS_PATH: "/ms-playwright"
+      CHROMIUM_FLAGS: "--disable-gpu --no-sandbox --headless=new"
+      MAXUN_TELEMETRY: "false"
+  - name: maxun-postgres
+    image: mirror.gcr.io/library/postgres:13
     servicePorts:
     - 5432
     vars:
-      POSTGRES_DB: maxun
-      POSTGRES_USER: maxun
+      POSTGRES_DB: "maxun"
+      POSTGRES_USER: "maxun"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
     volumes:
     - name: maxun-db
       mountPath: /var/lib/postgresql/data
       size: 5Gi
-  - name: redis
+  - name: maxun-redis
     image: mirror.gcr.io/library/redis:7-alpine
     servicePorts:
     - 6379
-    volumes:
-    - name: maxun-redis
-      mountPath: /data
-      size: 2Gi
 ```
 
 **Common edits:**
@@ -98,7 +123,7 @@ only regenerates it if you delete it or on the very first deploy.
 ### `.github/workflows/nexlayer.yml` — CI/CD
 
 Triggers on:
-- **Push** to `develop` → production redeploy
+- **Push** to `nexlayer` → production redeploy
 - **Pull request** → preview deploy with a unique URL posted as a PR comment
 - **Manual** → run on demand from the Actions tab (no commit required)
 
@@ -115,7 +140,7 @@ include this context in your prompt:
 > *"This project is deployed on Nexlayer. The deployment manifest is `nexlayer.yaml`.
 > The container exposes port auto-detected. When adding a new service (database, cache,
 > worker), add it as a new pod in `nexlayer.yaml` and reference it with
-> `<podName>.pod:<port>` syntax. CI/CD runs on push to `develop`."*
+> `<podName>.pod:<port>` syntax. CI/CD runs on push to `nexlayer`."*
 
 The `nexlayer.skills` file in this repo gives agents structured guidance on the
 Nexlayer platform, including schema reference, common patterns, and anti-patterns.

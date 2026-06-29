@@ -4,7 +4,7 @@ application:
   # Frontend (Vite dev server) — built from source via the root Dockerfile so the
   # patched vite.config.js (host=true, allowedHosts=true) is baked in. Serves UI.
   - name: app
-    image: getmaxun/maxun-frontend:latest
+    image: mirror.gcr.io/getmaxun/maxun-frontend:latest
     path: /
     servicePorts:
     - 5173
@@ -18,7 +18,7 @@ application:
   # omitted; it requires a `server /data` command the schema can't express and
   # is not needed for the frontend UI to serve.
   - name: backend
-    image: getmaxun/maxun-backend:latest
+    image: mirror.gcr.io/getmaxun/maxun-backend:latest
     path: /api
     servicePorts:
     - 8080
@@ -50,18 +50,18 @@ application:
       CHROMIUM_FLAGS: "--disable-gpu --no-sandbox --headless=new"
       MAXUN_TELEMETRY: "false"
   - name: maxun-postgres
-    image: postgres:13
+    image: mirror.gcr.io/library/postgres:13
     servicePorts:
     - 5432
     vars:
       POSTGRES_DB: "maxun"
       POSTGRES_USER: "maxun"
-      POSTGRES_PASSWORD: "maxunpgpass"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
     volumes:
     - name: maxun-db
       mountPath: /var/lib/postgresql/data
       size: 5Gi
   - name: maxun-redis
-    image: redis:7-alpine
+    image: mirror.gcr.io/library/redis:7-alpine
     servicePorts:
     - 6379
