@@ -4,7 +4,7 @@ application:
   # Frontend (Vite dev server) — built from source via the root Dockerfile so the
   # patched vite.config.js (host=true, allowedHosts=true) is baked in. Serves UI.
   - name: app
-    image: mirror.gcr.io/getmaxun/maxun-frontend:latest
+    image: maxun:latest
     path: /
     servicePorts:
     - 5173
@@ -34,7 +34,7 @@ application:
       SESSION_SECRET: "maxun_session_secret_value"
       DB_NAME: "maxun"
       DB_USER: "maxun"
-      DB_PASSWORD: "maxunpgpass"
+      DB_PASSWORD: "${POSTGRES_PASSWORD}"
       DB_HOST: "maxun-postgres.pod"
       DB_PORT: "5432"
       REDIS_HOST: "maxun-redis.pod"
