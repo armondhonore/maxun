@@ -12,8 +12,20 @@ export default defineConfig(() => {
       'import.meta.env.VITE_PUBLIC_URL': JSON.stringify(publicUrl),
     }, 
     server: {
-      host: new URL(publicUrl).hostname,
-      port: parseInt(new URL(publicUrl).port),
+      // Bind all interfaces so the pod's Service can reach the dev server
+      // (parsing the bind host from VITE_PUBLIC_URL pins it to a name that
+      // does not exist as a local interface -> unreachable -> 502/503).
+      host: true,
+      port: 5173,
+      // Vite 6 enforces allowedHosts; the Nexlayer public domain differs from
+      // VITE_PUBLIC_URL, so accept any Host header or it returns "host not
+      // allowed".
+      allowedHosts: true,
+    },
+    preview: {
+      host: true,
+      port: 5173,
+      allowedHosts: true,
     },
     build: {
       outDir: 'build',
