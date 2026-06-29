@@ -1,10 +1,18 @@
 application:
   name: maxun
   pods:
-  # Frontend (Vite dev server) — built from source via the root Dockerfile so the
-  # patched vite.config.js (host=true, allowedHosts=true) is baked in. Serves UI.
+  # Single pod: the Maxun frontend (Vite dev server) BUILT FROM SOURCE via the
+  # root Dockerfile, so the patched vite.config.js (host=true, allowedHosts=true)
+  # is baked in. The prebuilt getmaxun/maxun-frontend image is intentionally NOT
+  # used — its unpatched Vite returns 403 "host not allowed" for the Nexlayer
+  # public domain. Image name is a local build tag (no upstream match) so the
+  # pipeline substitutes the source-built image here.
   - name: app
+<<<<<<< Updated upstream
     image: mirror.gcr.io/getmaxun/maxun-frontend:latest
+=======
+    image: maxun-ui:latest
+>>>>>>> Stashed changes
     path: /
     servicePorts:
     - 5173
@@ -14,6 +22,7 @@ application:
       PUBLIC_URL: "<% URL %>"
       VITE_BACKEND_URL: "<% URL %>/api"
       BACKEND_URL: "<% URL %>/api"
+<<<<<<< Updated upstream
   # Backend API (prebuilt) — needs postgres + redis. Minio (file export) is
   # omitted; it requires a `server /data` command the schema can't express and
   # is not needed for the frontend UI to serve.
@@ -65,3 +74,5 @@ application:
     image: mirror.gcr.io/library/redis:7-alpine
     servicePorts:
     - 6379
+=======
+>>>>>>> Stashed changes
